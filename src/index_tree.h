@@ -1,8 +1,4 @@
-//
-// Created by jefun on 2019/1/1.
-//
-
-
+// comment: 索引(B+)树的定义
 #ifndef DBMS_INDEX_H
 #define DBMS_INDEX_H
 
@@ -102,7 +98,7 @@ public:
                 // boost::get<std::string>(i1.get(i)).compare(boost::get<std::string>(i2.get(i))) < 0)
                 std::string s1 = boost::get<std::string>(i1.get(i));
                 std::string s2 = boost::get<std::string>(i2.get(i));
-                std::cout << s1 << " < " << s2 << std::endl;
+                // std::cout << s1 << " < " << s2 << std::endl;
                 if (std::stoi(s1) <= std::stoi(s2))
                     return false;
             }
@@ -394,6 +390,11 @@ public:
     void del(int val) {
         dataFound = false;
         deleteNode(rootBlock, val, 0);
+    }
+
+    void del(Indexes index){
+        dataFound = false;
+        deleteNode(rootBlock, index, 0);
     }
 
     void insertNode(DataNode *curBlock, Indexes val, DataType data) {
@@ -732,15 +733,22 @@ public:
     }
 
     void _print(std::vector<DataNode *> Blocks) {
+        // std::cout << "print_" << std::endl;
+        // for (auto it : rootBlock->childBlock[0]->data[2] ) {
+        //    std::cout << it << " ";
+        // }
+        // std::cout << std::endl;
+
         std::vector<DataNode *> newBlocks;
         for (int i = 0; i < Blocks.size(); i++) { //for every block
             DataNode *curBlock = Blocks[i];
-
+            // std::cout << curBlock << "=" << rootBlock->childBlock[0] << "=" << rootBlock << std::endl;
+            // std::cout << curBlock->data[2][0] << "=" << rootBlock->childBlock[0]->data[2][0] << std::endl;
             std::cout << "[|";
             int j;
             for (j = 0; j < curBlock->node_num; j++) {
                 //traverse the childBlocks, print values and save all the childBlocks
-                std::cout << curBlock->indexes[j] << "|";
+                std::cout << curBlock->indexes[j] << "(" << curBlock->data[j][2] << ")" <<"|";
                 if (curBlock->childBlock[j] != NULL)
                     newBlocks.push_back(curBlock->childBlock[j]);
             }
@@ -810,7 +818,7 @@ public:
                 k++;
             }
         }
-        std::cout << "save to file nums: " << k << std::endl;
+        // std::cout << "save to file nums: " << k << std::endl;
     }
 
 };

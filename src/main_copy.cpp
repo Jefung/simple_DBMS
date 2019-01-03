@@ -881,18 +881,18 @@
 // #include "sql_gram.tab.h"
 // #include "gram.h"
 // int main(){
-//     gramTree* root;
-//     gramTree* temp;
-// 	root=new gramTree();
-//     root->setType(gramTree::GRAM_ROOT);
-//     temp=new gramTree();
-//     temp->setType(gramTree::GRAM_TEMP);
+//     GramTree* root;
+//     GramTree* temp;
+// 	root=new GramTree();
+//     root->setType(GramTree::GRAM_ROOT);
+//     temp=new GramTree();
+//     temp->setType(GramTree::GRAM_TEMP);
 // 	while(yyparse()!=0){
 // 	    root->showTree();
-// 	    root=new gramTree();
-//         root->setType(gramTree::GRAM_ROOT);
-//         temp=new gramTree();
-//         temp->setType(gramTree::GRAM_TEMP);
+// 	    root=new GramTree();
+//         root->setType(GramTree::GRAM_ROOT);
+//         temp=new GramTree();
+//         temp->setType(GramTree::GRAM_TEMP);
 //         p=NULL;
 // 	}
 // }

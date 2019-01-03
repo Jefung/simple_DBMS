@@ -1,7 +1,7 @@
 //
 // Created by jefun on 2018/12/31.
 //
-
+// comment: 文件操作类
 #ifndef DBMS_FILE_H
 #define DBMS_FILE_H
 
@@ -30,6 +30,7 @@
 class File {
 public:
     static bool file_exists(std::string path);
+
     static void create_empty_file(std::string path);
 
     static bool file_is_empty_or_eof(std::ifstream &fs);
@@ -49,6 +50,8 @@ public:
     static std::ofstream create(std::string path);
 
     static bool rm_dir(std::string path);
+
+    static bool rm_file(std::string path);
 
     static std::vector<std::string> traversal_dir(std::string dirname);
 

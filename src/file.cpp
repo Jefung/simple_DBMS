@@ -9,6 +9,7 @@
 #include <fstream>
 
 bool File::file_exists(std::string path) {
+    // std::cout << path << std::endl;
     std::ifstream f(path.c_str());
     return f.good();
 }
@@ -133,7 +134,7 @@ std::vector<std::string> File::traversal_dir(std::string dirname) {
         /* print all the files and directories within directory */
         while ((ent = readdir(dir)) != NULL) {
             files.push_back(ent->d_name);
-            printf("%s\n", ent->d_name);
+            // printf("%s\n", ent->d_name);
         }
         closedir(dir);
     } else {
@@ -175,5 +176,12 @@ bool File::file_is_empty_or_eof(std::ifstream &fs) {
         return false;
     }
 
+}
+
+bool File::rm_file(std::string path) {
+    if(remove(path.c_str()) != 0)
+        return false;
+    else
+        return true;
 }
 

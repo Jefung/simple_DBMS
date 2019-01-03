@@ -1,9 +1,6 @@
-//
-// Created by jefun on 2018/12/31.
-//
-
-#ifndef DBMS_GRAMMER_TREE_H
-#define DBMS_GRAMMER_TREE_H
+// comment: 语法树的定义
+#ifndef DBMS_GRAMTREE_H
+#define DBMS_GRAMTREE_H
 class GramTree{
 private:
 	int type;
@@ -20,19 +17,17 @@ public:
 		GRAM_NOTNULL = 10010, GRAM_LOGIC = 10011, GRAM_COMPARE = 10012,
 		GRAM_NULLVALUE = 10013, GRAM_INDEX = 10014, GRAM_TEMP = 10015,
 		GRAM_OPERATION = 10016, GRAM_KEYVALUE = 10017, GRAM_SELECTEDLIST = 10018;
-
+	
 	void setType(int type);
 	int getType();
 	void setStrValue(char* value);
-
-	int getNumValue();
-	virtual void setStrValue(const char *value) = 0;
+	void setStrValue(const char *value);
 	char* getStrValue();
 	void setNumValue(int value);
-    int addChild(int type);    //return new child index
-    void addChildToLast(GramTree *node);
+	int getNumValue();
 	int getChildNum();
-
+	int addChild(int type);    //return new child index
+	void addChildToLast(GramTree *node);
 	void addChildToFirst(GramTree *node);
 	GramTree* getChild(int childIndex);    //return child pointer
 	int removeChild(int index);    //return 1 means succeeded and 0 means this child does not exist
@@ -41,5 +36,4 @@ public:
 	void getTypeStr(char *str);    //get string according to type
 };
 
-
-#endif //DBMS_GRAMMER_TREE_H
+#endif

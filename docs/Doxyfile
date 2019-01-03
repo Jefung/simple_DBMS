@@ -1568,7 +1568,7 @@ MATHJAX_CODEFILE       =
 # using the <cursor keys>. Press <Enter> to select an item or <escape> to cancel
 # the search. The filter options can be selected when the cursor is inside the
 # search box by pressing <Shift>+<cursor down>. Also here use the <cursor keys>
-# to select a filter and <Enter> or <escape> to activate or cancel the filter
+# to get_suitable_rows a filter and <Enter> or <escape> to activate or cancel the filter
 # option.
 # The default indexes is: YES.
 # This tag requires that the tag GENERATE_HTML is set to YES.

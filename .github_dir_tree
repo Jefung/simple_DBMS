@@ -1,0 +1,20 @@
+[ignore-files]
+.git
+.gitignore
+.github_dir_tree
+.idea
+cmake-build-debug
+third_lib
+tests
+docs
+README.md
+
+[common]
+level = 0
+generate-comment = True
+update-readme = False
+start-line = # 目录结构
+end-line = ---
+comment-match = // comment:
+max-line-len = 120
+dir-description = .dir_desc

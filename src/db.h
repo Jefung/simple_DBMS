@@ -1,12 +1,13 @@
 //
 // Created by jefun on 2018/12/31.
 //
+// comment: DB控制器, 创建/删除库, 加载表, 控制表
 
 #ifndef DBMS_DB_H
 #define DBMS_DB_H
 
 
-#include "grammer_tree.h"
+#include "gram.h"
 #include <list>
 #include <vector>
 #include "table.h"
@@ -25,6 +26,13 @@ public:
     std::string insert(GramTree *tree);
 
     std::string select(GramTree *tree);
+
+    std::string update(GramTree* tree);
+
+    std::string del(GramTree* tree);
+
+    std::string create_index(GramTree* tree);
+    std::string drop_index(GramTree* tree);
 
     bool table_exists(std::string table_name);
 
