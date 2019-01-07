@@ -1,13 +1,11 @@
-#ifndef DBMS_STRING_H
-#define DBMS_STRING_H
+#ifndef DBMS_INT_H
+#define DBMS_INT_H
 
 #include "col_type_interface.h"
-#include <iostream>
-
-class String : public ColTypeInterface {
+class Int: public ColTypeInterface {
 public:
-    std::string data;
-    String(std::string data) : data(data) {};
+    int data;
+    Int(int data) : data(data) {};
 
 
 protected:
@@ -17,4 +15,4 @@ protected:
 };
 
 
-#endif //DBMS_STRING_H
+#endif //DBMS_INT_H
