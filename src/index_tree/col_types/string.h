@@ -14,6 +14,7 @@ protected:
     virtual bool less(ColTypeInterface* p1, ColTypeInterface* p2) const;
     virtual bool greater(ColTypeInterface* p1, ColTypeInterface* p2) const;
     virtual bool equal(ColTypeInterface* p1, ColTypeInterface* p2) const;
+    virtual void print(std::ostream &ss) const;
 };
 
 
