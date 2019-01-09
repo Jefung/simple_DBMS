@@ -7,7 +7,6 @@ public:
     int data;
     Int(int data) : data(data) {};
 
-
 protected:
     virtual bool less(ColTypeInterface* p1, ColTypeInterface* p2) const;
     virtual bool greater(ColTypeInterface* p1, ColTypeInterface* p2) const;
