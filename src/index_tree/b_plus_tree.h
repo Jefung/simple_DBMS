@@ -1,12 +1,8 @@
 #ifndef DBMS_B_PLUS_TREE_H
 #define DBMS_B_PLUS_TREE_H
 
-// #include <index_tree.h>
-// #include <index_tree.h>
-// #include <index_tree.h>
 #include "index.h"
 #include <list>
-// #include "../index_tree.h"
 
 template<typename DataType>
 struct Node{
@@ -344,7 +340,6 @@ void BPlusTree<DataType>::delete_index(BPlusTree::DataNode *cur_node, Index inde
         return;
     }
 
-    // todo: 可能存在吗? 即存在 root有一个元素和一个孩子?
     if(cur_node->is_root() && !cur_node->is_leaf() && cur_node->size() == 0){
         _root = cur_node->children[0];
         _root->parent = nullptr;
@@ -352,25 +347,24 @@ void BPlusTree<DataType>::delete_index(BPlusTree::DataNode *cur_node, Index inde
     }
 
 
-    // todo: 重新分布节点和合并节点
     if(cur_node->is_leaf() && !cur_node->is_root()){
         if(cur_node_pos == 0){
             DataNode *right_node = cur_node->parent->children[1];
-            //if we the right one has more than half nodes of maximum capacity than re-distribute
             if(right_node != nullptr && right_node->size() > (_max_leaf_num + 1) / 2){
+                // 如果右兄弟节点存在且其index数量大于最大节点数的一半,则向其借一个元素
                 redistribute_node(cur_node, right_node, 0, 0);
             }else if(right_node != nullptr && cur_node->size() + right_node->size() < _max_leaf_num){
-                //else there is nothing to re-distribute, so we can merge them
+                // 如果左右节点的index数数量加起来小于最大节点数
                 merge_node(cur_node, right_node, 1);
             }
         }else{
+            // 优先考虑左孩子,不符合条件再考虑右孩子节点(如果存在的话)
             DataNode *left_node = cur_node->parent->children[cur_node_pos - 1];
             DataNode *right_node = nullptr;
             if(cur_node_pos + 1 < cur_node->parent->children.size())
                 right_node = cur_node->parent->children[cur_node_pos + 1];
 
 
-            //if we see that left one has more than half nodes of maximum capacity then try to re-distribute
             if(left_node != nullptr && left_node->size() > (_max_leaf_num + 1) / 2){
                 redistribute_node(left_node, cur_node, cur_node_pos - 1, 1);
             }else if(right_node != nullptr && right_node->size() > (_max_leaf_num + 1) / 2){
@@ -385,34 +379,23 @@ void BPlusTree<DataType>::delete_index(BPlusTree::DataNode *cur_node, Index inde
 
         if(cur_node_pos == 0){
             DataNode *right_node = cur_node->parent->children[1];
-            //if we see the right one has more than half nodes of maximum capacity than re-distribute
             if(right_node != nullptr && right_node->size() - 1 >= ceil((_max_leaf_num - 1) / 2)){
                 redistribute_node(cur_node, right_node, 0, 0);
-            }
-                //else there is nothing to re-distribute, so we can merge them
-            else if(right_node != nullptr && cur_node->size() + right_node->size() < _max_leaf_num - 1){
+            }else if(right_node != nullptr && cur_node->size() + right_node->size() < _max_leaf_num - 1){
                 merge_node(cur_node, right_node, 1);
             }
-        }
-            //for any other case we can safely take the left one to try for re-distribution
-        else{
+        }else{
             DataNode *left_node = cur_node->parent->children[cur_node_pos - 1];
 
             DataNode *right_node = nullptr;
             if(cur_node_pos + 1 < cur_node->parent->children.size())
                 right_node = cur_node->parent->children[cur_node_pos + 1];
 
-            //if we see that left one has more than half nodes of maximum capacity then try to re-distribute
             if(left_node != nullptr && left_node->size() - 1 >= ceil((_max_leaf_num - 1) / 2)){
                 redistribute_node(left_node, cur_node, cur_node_pos - 1, 1);
             }else if(right_node != nullptr && right_node->size() - 1 >= ceil((_max_leaf_num - 1) / 2)){
-                if(!cur_node)
-                    std::cout << "cur_node is nullptr" << std::endl;
                 redistribute_node(cur_node, right_node, cur_node_pos, 0);
-            }
-
-                //else there is nothing to re-distribute, so we merge them
-            else if(left_node != nullptr && cur_node->size() + left_node->size() < _max_leaf_num - 1){
+            }else if(left_node != nullptr && cur_node->size() + left_node->size() < _max_leaf_num - 1){
                 merge_node(left_node, cur_node, cur_node_pos);
             }else if(right_node != nullptr && cur_node->size() + right_node->size() < _max_leaf_num - 1){
                 merge_node(cur_node, right_node, cur_node_pos + 1);
@@ -421,15 +404,12 @@ void BPlusTree<DataType>::delete_index(BPlusTree::DataNode *cur_node, Index inde
 
     }
 
-
-
-    //delete the duplicate if any in the ancestor Node
+    // 如果父辈节点出现了待删除索引,则删除
     DataNode *tmp_node = cur_node->parent;
     while(tmp_node != nullptr){
         for(int i = 0; i < tmp_node->size(); i++){
             if(tmp_node->indexes[i] == pre_leftmost_index){
                 tmp_node->indexes[i] = cur_node->indexes[0];
-                // tmp_node->data[i] = cur_node->data[0];
                 break;
             }
         }
@@ -524,8 +504,9 @@ void BPlusTree<DataType>::merge_node(BPlusTree::DataNode *left_node, BPlusTree::
 
 template<typename DataType>
 BPlusTree<DataType>::BPlusTree(int max_leaf_num){
-    // if(max_leaf_num <= 3)
-    //     throw "max leaf num must > 3: " + std::to_string(max_leaf_num);
+    // 该B+树只能支持大于等于3的最大叶子节点
+    if(max_leaf_num <= 2)
+        throw "max leaf num must >= 3: " + std::to_string(max_leaf_num);
     _max_leaf_num = max_leaf_num;
     _data_found = false;
     _root = new DataNode;
@@ -553,7 +534,6 @@ std::list<Index> BPlusTree<DataType>::get_reverse_index_list(){
         }
     }
     return l;
-    // return std::list<Index>();
 }
 
 #endif //DBMS_B_PLUS_TREE_H
