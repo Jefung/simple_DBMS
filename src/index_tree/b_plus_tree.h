@@ -104,8 +104,7 @@ void BPlusTree<DataType>::insert_node(BPlusTree::DataNode *node, Index index, Da
 
 template<typename DataType>
 void BPlusTree<DataType>::split_non_leaf(BPlusTree::DataNode *node){
-    // std::cout << "slipt_non_leaf: " << std::endl;
-    int mid, i, j;
+    int mid, i;
 
     // 因为是非叶子节点, 所以需要提取中间孩子节点到父亲节点, 并且抛弃中间孩子节点
     // 如果最大叶子节点是奇数, 左孩子节点数=右孩子节点数=n/2
@@ -118,29 +117,19 @@ void BPlusTree<DataType>::split_non_leaf(BPlusTree::DataNode *node){
     std::move(node->indexes.begin() + mid + 1, node->indexes.end(), std::back_inserter(right_node->indexes));
     node->indexes.erase(node->indexes.begin() + mid, node->indexes.end());
 
-    auto mid_data = node->data[mid];
-    std::move(node->data.begin() + mid + 1, node->data.end(), std::back_inserter(right_node->data));
-    node->data.erase(node->data.begin() + mid, node->data.end());
-
-    // right_node->children.clear();
     std::move(node->children.begin() + mid + 1, node->children.end(), std::back_inserter(right_node->children));
     node->children.erase(node->children.begin() + mid + 1, node->children.end());
 
 
-    // for(int i = 0; i < node->children.size(); i++){
-    //     node->children[i]->parent = node;
-    // }
     for(int i = 0; i < right_node->children.size(); i++){
         right_node->children[i]->parent = right_node;
     }
 
 
-    if(node->parent == nullptr){
+    if(node->is_root()){
         // 如果当前节点是根节点, 则new新节点作为父节点
         DataNode *parent = new DataNode();
-        // parent->parent = nullptr;
         parent->indexes.push_back(mid_index);
-        parent->data.push_back(mid_data);
         parent->children.push_back(node);
         parent->children.push_back(right_node);
         node->parent = parent;
@@ -149,26 +138,18 @@ void BPlusTree<DataType>::split_non_leaf(BPlusTree::DataNode *node){
         return;
     }else{
         // 如果当前节点不是根节点
-
-        // we have to put the val and assign the right_node to the right place in the parentBlock
-        // so we go to the parentBlock and from now we consider the cur_node as the parentBlock of the splitted Node
         // 此处将node->parent赋值给node
         node = node->parent;
         DataNode *new_child_node = right_node;
 
-        // 插入待分裂的非叶子节点的中间索引及数据到其父亲节点中
+        // 插入待分裂的非叶子节点的中间索引到其父亲节点中
         for(i = 0; i <= node->size(); i++){
             if(i == node->size()){
                 node->indexes.push_back(mid_index);
-                node->data.push_back(mid_data);
-                // 这里额外插入一个nullptr供下面插入孩子节点使用
-                // 保证了孩子节点数 = 索引节点数+1 = 数据节点数+1
-                // node->children.push_back(nullptr);
                 break;
             }
             if(mid_index < node->indexes[i]){
                 std::swap(node->indexes[i], mid_index);
-                std::swap(node->data[i], mid_data);
             }
         }
 
@@ -177,7 +158,6 @@ void BPlusTree<DataType>::split_non_leaf(BPlusTree::DataNode *node){
         new_child_node->parent = node;
         for(int i = 0; i <= node->children.size(); i++){
             if(i == node->children.size()){
-                // node->children[i] = new_child_node;
                 node->children.push_back(new_child_node);
                 break;
             }else if(new_child_node->indexes[0] < node->children[i]->indexes[0]){
@@ -185,20 +165,13 @@ void BPlusTree<DataType>::split_non_leaf(BPlusTree::DataNode *node){
                 std::swap(node->children[i], new_child_node);
             }
         }
-
-        // 更新所有孩子节点的父亲指针指向node
-        // todo: 考虑直接把right_node的父亲指针指向node?
-        // for(int i = 0; i < node->children.size(); i++){
-        //     node->children[i]->parent = node;
-        // }
     }
 
 }
 
 template<typename DataType>
 void BPlusTree<DataType>::split_leaf(BPlusTree::DataNode *node){
-    // std::cout << "split_leaf" << std::endl;
-    int mid, i, j;
+    int mid, i;
     // 因为是叶子节点, 所以需要提取中间孩子节点到父亲节点,并保留所有叶子节点
     // 如果最大叶子节点是奇数, 左孩子节点数-1=右孩子节点数=n/2
     // 如果最大叶子节点是偶数, 左孩子节点数=右孩子节点数=n/2
@@ -209,7 +182,6 @@ void BPlusTree<DataType>::split_leaf(BPlusTree::DataNode *node){
     // 将当前节点(node)作为左孩子, right_node作为右孩子
     DataNode *right_node = new DataNode();
     auto mid_index = node->indexes[mid];
-    auto mid_data = node->data[mid];
     std::move(node->indexes.begin() + mid, node->indexes.end(), std::back_inserter(right_node->indexes));
     node->indexes.erase(node->indexes.begin() + mid, node->indexes.end());
 
@@ -219,19 +191,11 @@ void BPlusTree<DataType>::split_leaf(BPlusTree::DataNode *node){
     // todo: 考虑将叶子节点的孩子指针清空, 而不是用nullptr来保证索引节点数+1=孩子节点数
     node->children.clear();
     right_node->children.clear();
-    // for(int i = 0; i <= node->indexes.size(); i++){
-    //     node->children.push_back(nullptr);
-    // }
-    // for(int i = 0; i <= right_node->indexes.size(); i++){
-    //     right_node->children.push_back(nullptr);
-    // }
 
-    if(node->parent == nullptr){
+    if(node->is_root()){
         // 如果叶子节点是根节点, 则new新节点作为根节点
-        // std::cout << "split leaf: " << node->size() << " " << right_node->size() << std::endl;
         DataNode *parent = new DataNode();
         parent->indexes.push_back(mid_index);
-        parent->data.push_back(mid_data);
         parent->children.push_back(node);
         parent->children.push_back(right_node);
         node->parent = parent;
@@ -247,12 +211,10 @@ void BPlusTree<DataType>::split_leaf(BPlusTree::DataNode *node){
         for(i = 0; i <= node->size(); i++){
             if(i == node->size()){
                 node->indexes.push_back(mid_index);
-                node->data.push_back(mid_data);
                 break;
             }
             if(mid_index < node->indexes[i]){
                 std::swap(node->indexes[i], mid_index);
-                std::swap(node->data[i], mid_data);
             }
         }
 
@@ -269,13 +231,6 @@ void BPlusTree<DataType>::split_leaf(BPlusTree::DataNode *node){
                 std::swap(node->children[i], new_child_node);
             }
         }
-
-
-        // 更新孩子节点的父亲指针指向
-        // for(int i = 0; i < node->children.size(); i++){
-        //     node->children[i]->parent = node;
-        //     std::cout << node->children[i]->indexes[0] << std::endl;
-        // }
     }
 }
 
@@ -287,7 +242,6 @@ void BPlusTree<DataType>::insert(Index index, DataType data){
 template<typename DataType>
 void BPlusTree<DataType>::print(){
     _print({_root});
-    // std::cout << "print finish" << std::endl;
 }
 
 template<typename DataType>
@@ -296,8 +250,13 @@ void BPlusTree<DataType>::_print(std::vector<DataNode *> nodes){
     std::vector<DataNode *> newBlocks;
     for(int i = 0; i < nodes.size(); i++){
         DataNode *cur_node = nodes[i];
-        std::cout << "(" << cur_node->indexes.size() << "|" << cur_node->data.size() << "|" << cur_node->children.size()
-                  << ")";
+        // std::cout << "(" << cur_node->indexes.size() << "|" << cur_node->data.size() << "|" << cur_node->children.size()
+        //           << ")";
+        if(cur_node->data.size() == 0 && cur_node->indexes.size() != cur_node->children.size() - 1)
+            std::cout << "index node error" << std::endl;
+        if(cur_node->data.size() != 0 &&
+           (cur_node->children.size() != 0 || cur_node->data.size() != cur_node->indexes.size()))
+            std::cout << "leaf node error" << std::endl;
         std::cout << "[|";
         int j;
         if(cur_node->size() == 0)
@@ -341,8 +300,6 @@ void BPlusTree<DataType>::del(Index index){
 template<typename DataType>
 void BPlusTree<DataType>::delete_index(BPlusTree::DataNode *cur_node, Index index, int cur_node_pos){
 
-    // std::cout << "delete_index" << std::endl;
-    // std::cout <<  << std::endl;
     Index pre_leftmost_index = cur_node->indexes[0];
 
     for(int i = 0; _data_found == false && i <= cur_node->size(); i++){
@@ -371,13 +328,10 @@ void BPlusTree<DataType>::delete_index(BPlusTree::DataNode *cur_node, Index inde
         }
     }
 
-    //if the root is the only leaf
     if(cur_node->is_root() && cur_node->is_leaf()){
         return;
     }
 
-
-    //if the cur_node is rootBlock and it has one pointers only
     // todo: 可能存在吗? 即存在 root有一个元素和一个孩子?
     if(cur_node->is_root() && !cur_node->is_leaf() && cur_node->size() == 0){
         _root = cur_node->children[0];
@@ -463,7 +417,7 @@ void BPlusTree<DataType>::delete_index(BPlusTree::DataNode *cur_node, Index inde
         for(int i = 0; i < tmp_node->size(); i++){
             if(tmp_node->indexes[i] == pre_leftmost_index){
                 tmp_node->indexes[i] = cur_node->indexes[0];
-                tmp_node->data[i] = cur_node->data[0];
+                // tmp_node->data[i] = cur_node->data[0];
                 break;
             }
         }
@@ -475,25 +429,20 @@ template<typename DataType>
 void
 BPlusTree<DataType>::redistribute_node(BPlusTree::DataNode *left_node, BPlusTree::DataNode *right_node,
                                        int pos_of_left_node, int which_one_is_cur_node){
-    // std::cout << "redistribute_node" << std::endl;
 
     Index pre_right_first_index = right_node->indexes[0];
     if(which_one_is_cur_node == 0){
+        // 左节点是当前节点, 即需要从右节点移动第一个元素到左节点
 
         if(!left_node->is_leaf()){
             // 重组织非索引节点
             left_node->indexes.push_back(left_node->parent->indexes[pos_of_left_node]);
-            left_node->data.push_back(left_node->parent->data[pos_of_left_node]);
             left_node->children.push_back(right_node->children[0]);
 
             left_node->parent->indexes[pos_of_left_node] = right_node->indexes[0];
-            left_node->parent->data[pos_of_left_node] = right_node->data[0];
 
             right_node->indexes.erase(right_node->indexes.begin());
-            right_node->data.erase(right_node->data.begin());
             right_node->children.erase(right_node->children.begin());
-
-
         }else{
             // 重组织叶子节点
             left_node->indexes.push_back(right_node->indexes[0]);
@@ -503,33 +452,27 @@ BPlusTree<DataType>::redistribute_node(BPlusTree::DataNode *left_node, BPlusTree
             right_node->data.erase(right_node->data.begin());
 
             left_node->parent->indexes[pos_of_left_node] = right_node->indexes[0];
-            left_node->parent->data[pos_of_left_node] = right_node->data[0];
         }
 
 
     }else{
-
+        // 右左节点是当前节点, 即需要从左节点移动最后一个元素到左节点
         if(!right_node->is_leaf()){
             right_node->indexes.insert(right_node->indexes.begin(), right_node->parent->indexes[pos_of_left_node]);
-            right_node->data.insert(right_node->data.begin(), right_node->parent->data[pos_of_left_node]);
             right_node->children.insert(right_node->children.begin(), left_node->children.back());
 
             right_node->parent->indexes[pos_of_left_node] = left_node->indexes.back();
-            right_node->parent->data[pos_of_left_node] = left_node->data.back();
 
             left_node->indexes.pop_back();
-            left_node->data.pop_back();
             left_node->children.pop_back();
         }else{
             right_node->indexes.insert(right_node->indexes.begin(), left_node->indexes.back());
             right_node->data.insert(right_node->data.begin(), left_node->data.back());
 
             right_node->parent->indexes[pos_of_left_node] = right_node->indexes.front();
-            right_node->parent->data[pos_of_left_node] = right_node->data.front();
 
             left_node->indexes.pop_back();
             left_node->data.pop_back();
-
         }
     }
 
@@ -539,10 +482,9 @@ BPlusTree<DataType>::redistribute_node(BPlusTree::DataNode *left_node, BPlusTree
 template<typename DataType>
 void BPlusTree<DataType>::merge_node(BPlusTree::DataNode *left_node, BPlusTree::DataNode *right_node,
                                      int pos_of_right_node){
-    // std::cout << "merge_node" << std::endl;
     if(!left_node->is_leaf()){
         left_node->indexes.push_back(left_node->parent->indexes[pos_of_right_node - 1]);
-        left_node->data.push_back(left_node->parent->data[pos_of_right_node - 1]);
+        // left_node->data.push_back(left_node->parent->data[pos_of_right_node - 1]);
     }
     // todo: handle leaf node children nums
     left_node->indexes.insert(left_node->indexes.end(), right_node->indexes.begin(), right_node->indexes.end());
@@ -554,7 +496,7 @@ void BPlusTree<DataType>::merge_node(BPlusTree::DataNode *left_node, BPlusTree::
     }
 
     left_node->parent->indexes.erase(left_node->parent->indexes.begin() + pos_of_right_node - 1);
-    left_node->parent->data.erase(left_node->parent->data.begin() + pos_of_right_node - 1);
+    // left_node->parent->data.erase(left_node->parent->data.begin() + pos_of_right_node - 1);
     left_node->parent->children.erase(left_node->parent->children.begin() + pos_of_right_node);
 }
 
