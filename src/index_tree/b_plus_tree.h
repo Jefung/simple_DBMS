@@ -5,6 +5,7 @@
 // #include <index_tree.h>
 // #include <index_tree.h>
 #include "index.h"
+#include <list>
 // #include "../index_tree.h"
 
 template<typename DataType>
@@ -41,7 +42,9 @@ class BPlusTree{
 private:
     int _max_leaf_num;
     using DataNode = Node<DataType>;
-    DataNode *_root = new DataNode;
+    DataNode *_root;
+    DataNode *_leftmost_leaf;
+    DataNode *_rightmost_leaf;
     bool _data_found;
 
 public:
@@ -67,6 +70,10 @@ public:
                            int which_one_is_cur_node);
 
     void merge_node(DataNode *left_node, DataNode *right_node, int pos_of_right_node);
+
+    std::list<Index> get_forward_index_list();
+
+    std::list<Index> get_reverse_index_list();
 };
 
 template<typename DataType>
@@ -188,9 +195,15 @@ void BPlusTree<DataType>::split_leaf(BPlusTree::DataNode *node){
     std::move(node->data.begin() + mid, node->data.end(), std::back_inserter(right_node->data));
     node->data.erase(node->data.begin() + mid, node->data.end());
 
-    // todo: 考虑将叶子节点的孩子指针清空, 而不是用nullptr来保证索引节点数+1=孩子节点数
     node->children.clear();
     right_node->children.clear();
+
+    // 更新指针
+    right_node->next_leaf = node->next_leaf;
+    right_node->pre_leaf = node;
+    if(node->next_leaf)
+        node->next_leaf->pre_leaf = right_node;
+    node->next_leaf = right_node;
 
     if(node->is_root()){
         // 如果叶子节点是根节点, 则new新节点作为根节点
@@ -201,6 +214,8 @@ void BPlusTree<DataType>::split_leaf(BPlusTree::DataNode *node){
         node->parent = parent;
         right_node->parent = parent;
         _root = parent;
+        _leftmost_leaf = node;
+        _rightmost_leaf = right_node;
         return;
     }else{
         // 如果叶子节点不是根节点
@@ -231,6 +246,9 @@ void BPlusTree<DataType>::split_leaf(BPlusTree::DataNode *node){
                 std::swap(node->children[i], new_child_node);
             }
         }
+
+        if(!right_node->next_leaf)
+            _rightmost_leaf = right_node;
     }
 }
 
@@ -241,17 +259,17 @@ void BPlusTree<DataType>::insert(Index index, DataType data){
 
 template<typename DataType>
 void BPlusTree<DataType>::print(){
-    _print({_root});
+    std::vector<DataNode *> nodes;
+    nodes.push_back(_root);
+    _print(nodes);
 }
 
 template<typename DataType>
 void BPlusTree<DataType>::_print(std::vector<DataNode *> nodes){
-
+    // std::cout << "----------" << std::endl;
     std::vector<DataNode *> newBlocks;
     for(int i = 0; i < nodes.size(); i++){
         DataNode *cur_node = nodes[i];
-        // std::cout << "(" << cur_node->indexes.size() << "|" << cur_node->data.size() << "|" << cur_node->children.size()
-        //           << ")";
         if(cur_node->data.size() == 0 && cur_node->indexes.size() != cur_node->children.size() - 1)
             std::cout << "index node error" << std::endl;
         if(cur_node->data.size() != 0 &&
@@ -262,24 +280,19 @@ void BPlusTree<DataType>::_print(std::vector<DataNode *> nodes){
         if(cur_node->size() == 0)
             std::cout << "[空] ";
         for(j = 0; j < cur_node->size(); j++){
-            std::cout << cur_node->indexes[j] << "|";
+            if(cur_node->is_leaf())
+                std::cout << cur_node->indexes[j] << "(" << cur_node->data[j] << ")" << "|";
+            else
+                std::cout << cur_node->indexes[j] << "|";
+            std::cout.flush();
         }
         for(int k = 0; k < cur_node->children.size(); ++k){
-            // if(cur_node->children[k])
             newBlocks.push_back(cur_node->children[k]);
         }
-
-        // if(cur_node->children[j] != nullptr){
-        //     newBlocks.push_back(cur_node->children[j]);
-        // }
-
         std::cout << "]  ";
-
-        // std::cout.flush();
     }
 
     if(newBlocks.size() == 0){
-        //if there is no childBlock block left to send out then just the end of the recursion
         puts("");
         puts("");
         nodes.clear();
@@ -299,7 +312,6 @@ void BPlusTree<DataType>::del(Index index){
 
 template<typename DataType>
 void BPlusTree<DataType>::delete_index(BPlusTree::DataNode *cur_node, Index index, int cur_node_pos){
-
     Index pre_leftmost_index = cur_node->indexes[0];
 
     for(int i = 0; _data_found == false && i <= cur_node->size(); i++){
@@ -320,8 +332,8 @@ void BPlusTree<DataType>::delete_index(BPlusTree::DataNode *cur_node, Index inde
                 cur_node->data.erase(cur_node->data.begin() + i);
                 _data_found = true;
                 // todo: rm parent is_root?
-                if(cur_node->size() == 0 && !cur_node->is_root() && !cur_node->parent->is_root())
-                    cur_node->parent->children[cur_node_pos] = nullptr;
+                // if(cur_node->size() == 0 && !cur_node->is_root() && !cur_node->parent->is_root())
+                //     cur_node->parent->children[cur_node_pos] = nullptr;
                 break;
             }
             // todo: 考虑如果不存在这个元素则抛出异常,这样可以减少删除之前的查找是否存在?
@@ -438,6 +450,9 @@ BPlusTree<DataType>::redistribute_node(BPlusTree::DataNode *left_node, BPlusTree
             // 重组织非索引节点
             left_node->indexes.push_back(left_node->parent->indexes[pos_of_left_node]);
             left_node->children.push_back(right_node->children[0]);
+            for(int i = 0; i < left_node->children.size(); i++){
+                left_node->children[i]->parent = left_node;
+            }
 
             left_node->parent->indexes[pos_of_left_node] = right_node->indexes[0];
 
@@ -463,6 +478,10 @@ BPlusTree<DataType>::redistribute_node(BPlusTree::DataNode *left_node, BPlusTree
 
             right_node->parent->indexes[pos_of_left_node] = left_node->indexes.back();
 
+            for(int i = 0; i < right_node->children.size(); ++i){
+                right_node->children[i]->parent = right_node;
+            }
+
             left_node->indexes.pop_back();
             left_node->children.pop_back();
         }else{
@@ -475,8 +494,6 @@ BPlusTree<DataType>::redistribute_node(BPlusTree::DataNode *left_node, BPlusTree
             left_node->data.pop_back();
         }
     }
-
-
 }
 
 template<typename DataType>
@@ -484,7 +501,6 @@ void BPlusTree<DataType>::merge_node(BPlusTree::DataNode *left_node, BPlusTree::
                                      int pos_of_right_node){
     if(!left_node->is_leaf()){
         left_node->indexes.push_back(left_node->parent->indexes[pos_of_right_node - 1]);
-        // left_node->data.push_back(left_node->parent->data[pos_of_right_node - 1]);
     }
     // todo: handle leaf node children nums
     left_node->indexes.insert(left_node->indexes.end(), right_node->indexes.begin(), right_node->indexes.end());
@@ -492,20 +508,52 @@ void BPlusTree<DataType>::merge_node(BPlusTree::DataNode *left_node, BPlusTree::
     left_node->children.insert(left_node->children.end(), right_node->children.begin(), right_node->children.end());
 
     for(int i = 0; i < left_node->children.size(); i++){
-        left_node->children[i]->parent = left_node;
+        if(left_node->children[i])
+            left_node->children[i]->parent = left_node;
     }
-
+    if(left_node->is_leaf()){
+        left_node->next_leaf = right_node->next_leaf;
+        if(right_node->next_leaf)
+            right_node->next_leaf->pre_leaf = left_node;
+        else
+            _rightmost_leaf = left_node;
+    }
     left_node->parent->indexes.erase(left_node->parent->indexes.begin() + pos_of_right_node - 1);
-    // left_node->parent->data.erase(left_node->parent->data.begin() + pos_of_right_node - 1);
     left_node->parent->children.erase(left_node->parent->children.begin() + pos_of_right_node);
 }
 
 template<typename DataType>
 BPlusTree<DataType>::BPlusTree(int max_leaf_num){
-    if(max_leaf_num <= 3)
-        throw "max leaf num must > 3: " + std::to_string(max_leaf_num);
+    // if(max_leaf_num <= 3)
+    //     throw "max leaf num must > 3: " + std::to_string(max_leaf_num);
     _max_leaf_num = max_leaf_num;
     _data_found = false;
+    _root = new DataNode;
+    _leftmost_leaf = _root;
+    _rightmost_leaf = _root;
+}
+
+template<typename DataType>
+std::list<Index> BPlusTree<DataType>::get_forward_index_list(){
+    std::list<Index> l;
+    for(auto tmp = _leftmost_leaf; tmp != nullptr; tmp = tmp->next_leaf){
+        for(int i = 0; i < tmp->indexes.size(); i++){
+            l.push_back(tmp->indexes[i]);
+        }
+    }
+    return l;
+}
+
+template<typename DataType>
+std::list<Index> BPlusTree<DataType>::get_reverse_index_list(){
+    std::list<Index> l;
+    for(auto tmp = _rightmost_leaf; tmp != nullptr; tmp = tmp->pre_leaf){
+        for(int i = tmp->indexes.size() - 1; i >= 0; i--){
+            l.push_back(tmp->indexes[i]);
+        }
+    }
+    return l;
+    // return std::list<Index>();
 }
 
 #endif //DBMS_B_PLUS_TREE_H
