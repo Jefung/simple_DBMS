@@ -8,17 +8,22 @@
 #include <streambuf>
 #include "col_types/col_type_interface.h"
 
-class Index : public std::vector<ColTypeInterface*> {
+class Index : public std::vector<ColTypeInterface *>{
 
 public:
     Index();
+
     friend bool operator<(const Index &i1, const Index &i2);
 
     friend bool operator==(const Index &i1, const Index &i2);
 
     friend bool operator>(const Index &i1, const Index &i2);
 
-    friend std::ostream& operator<<(std::ostream& os, Index const& data);
+    friend bool operator>=(const Index &i1, const Index &i2);
+
+    friend bool operator<=(const Index &i1, const Index &i2);
+
+    friend std::ostream &operator<<(std::ostream &os, Index const &data);
 };
 
 

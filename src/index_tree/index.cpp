@@ -58,3 +58,11 @@ std::ostream &operator<<(std::ostream &os, const Index &data){
     }
     return os;
 }
+
+bool operator>=(const Index &i1, const Index &i2){
+    return i1 > i2 || i1 == i2;
+}
+
+bool operator<=(const Index &i1, const Index &i2){
+    return i1 < i2 || i1 == i2;
+}
