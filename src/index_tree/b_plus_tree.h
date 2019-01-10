@@ -4,12 +4,12 @@
 #include "index.h"
 #include <list>
 
-template<typename DataType>
+template<typename DataType, typename IndexType>
 struct Node{
-    Node<DataType> *parent;
-    Node<DataType> *next_leaf;
-    Node<DataType> *pre_leaf;
-    std::vector<Index> indexes;
+    Node<DataType, IndexType> *parent;
+    Node<DataType, IndexType> *next_leaf;
+    Node<DataType, IndexType> *pre_leaf;
+    std::vector<IndexType> indexes;
     std::vector<Node *> children;
     std::vector<DataType> data;
 
@@ -33,11 +33,11 @@ struct Node{
     }
 };
 
-template<typename DataType>
+template<typename DataType, typename IndexType>
 class BPlusTree{
 private:
     int _max_leaf_num;
-    using DataNode = Node<DataType>;
+    using DataNode = Node<DataType, IndexType>;
     DataNode *_root;
     DataNode *_leftmost_leaf;
     DataNode *_rightmost_leaf;
@@ -46,9 +46,9 @@ private:
 public:
     BPlusTree(int max_leaf_num = 5);
 
-    void insert(Index index, DataType data);
+    void insert(IndexType index, DataType data);
 
-    void insert_node(DataNode *node, Index index, DataType data);
+    void insert_node(DataNode *node, IndexType index, DataType data);
 
     void split_non_leaf(DataNode *node);
 
@@ -58,22 +58,22 @@ public:
 
     void _print(std::vector<DataNode *> nodes);
 
-    void del(Index index);
+    void del(IndexType index);
 
-    void delete_index(DataNode *cur_node, Index index, int cur_node_pos);
+    void delete_index(DataNode *cur_node, IndexType index, int cur_node_pos);
 
     void redistribute_node(DataNode *left_node, DataNode *right_node, int pos_of_left_node,
                            int which_one_is_cur_node);
 
     void merge_node(DataNode *left_node, DataNode *right_node, int pos_of_right_node);
 
-    std::list<Index> get_forward_index_list();
+    std::list<IndexType> get_forward_index_list();
 
-    std::list<Index> get_reverse_index_list();
+    std::list<IndexType> get_reverse_index_list();
 };
 
-template<typename DataType>
-void BPlusTree<DataType>::insert_node(BPlusTree::DataNode *node, Index index, DataType data){
+template<typename DataType, typename IndexType>
+void BPlusTree<DataType, IndexType>::insert_node(BPlusTree::DataNode *node, IndexType index, DataType data){
     // std::cout << "insert_node: " << std::endl;
     for(int i = 0; i <= node->size(); i++){
         // 如果已经遍历完该节点的所有index
@@ -105,8 +105,8 @@ void BPlusTree<DataType>::insert_node(BPlusTree::DataNode *node, Index index, Da
         split_leaf(node);
 }
 
-template<typename DataType>
-void BPlusTree<DataType>::split_non_leaf(BPlusTree::DataNode *node){
+template<typename DataType, typename IndexType>
+void BPlusTree<DataType, IndexType>::split_non_leaf(BPlusTree::DataNode *node){
     int mid, i;
 
     // 因为是非叶子节点, 所以需要提取中间孩子节点到父亲节点, 并且抛弃中间孩子节点
@@ -172,8 +172,8 @@ void BPlusTree<DataType>::split_non_leaf(BPlusTree::DataNode *node){
 
 }
 
-template<typename DataType>
-void BPlusTree<DataType>::split_leaf(BPlusTree::DataNode *node){
+template<typename DataType, typename IndexType>
+void BPlusTree<DataType, IndexType>::split_leaf(BPlusTree::DataNode *node){
     int mid, i;
     // 因为是叶子节点, 所以需要提取中间孩子节点到父亲节点,并保留所有叶子节点
     // 如果最大叶子节点是奇数, 左孩子节点数-1=右孩子节点数=n/2
@@ -248,20 +248,20 @@ void BPlusTree<DataType>::split_leaf(BPlusTree::DataNode *node){
     }
 }
 
-template<typename DataType>
-void BPlusTree<DataType>::insert(Index index, DataType data){
+template<typename DataType, typename IndexType>
+void BPlusTree<DataType, IndexType>::insert(IndexType index, DataType data){
     insert_node(_root, index, data);
 }
 
-template<typename DataType>
-void BPlusTree<DataType>::print(){
+template<typename DataType, typename IndexType>
+void BPlusTree<DataType, IndexType>::print(){
     std::vector<DataNode *> nodes;
     nodes.push_back(_root);
     _print(nodes);
 }
 
-template<typename DataType>
-void BPlusTree<DataType>::_print(std::vector<DataNode *> nodes){
+template<typename DataType, typename IndexType>
+void BPlusTree<DataType, IndexType>::_print(std::vector<DataNode *> nodes){
     // std::cout << "----------" << std::endl;
     std::vector<DataNode *> newBlocks;
     for(int i = 0; i < nodes.size(); i++){
@@ -276,9 +276,9 @@ void BPlusTree<DataType>::_print(std::vector<DataNode *> nodes){
         if(cur_node->size() == 0)
             std::cout << "[空] ";
         for(j = 0; j < cur_node->size(); j++){
-            if(cur_node->is_leaf())
-                std::cout << cur_node->indexes[j] << "(" << cur_node->data[j] << ")" << "|";
-            else
+            // if(cur_node->is_leaf())
+            //     std::cout << cur_node->indexes[j] << "(" << cur_node->data[j] << ")" << "|";
+            // else
                 std::cout << cur_node->indexes[j] << "|";
             std::cout.flush();
         }
@@ -300,15 +300,15 @@ void BPlusTree<DataType>::_print(std::vector<DataNode *> nodes){
     }
 }
 
-template<typename DataType>
-void BPlusTree<DataType>::del(Index index){
+template<typename DataType, typename IndexType>
+void BPlusTree<DataType, IndexType>::del(IndexType index){
     _data_found = false;
     delete_index(_root, index, 0);
 }
 
-template<typename DataType>
-void BPlusTree<DataType>::delete_index(BPlusTree::DataNode *cur_node, Index index, int cur_node_pos){
-    Index pre_leftmost_index = cur_node->indexes[0];
+template<typename DataType, typename IndexType>
+void BPlusTree<DataType, IndexType>::delete_index(BPlusTree::DataNode *cur_node, IndexType index, int cur_node_pos){
+    IndexType pre_leftmost_index = cur_node->indexes[0];
 
     for(int i = 0; _data_found == false && i <= cur_node->size(); i++){
         // 如果已经遍历过所有索引, 则判断是否大于最后一个索引,且最后一个孩子节点是否为空
@@ -417,12 +417,12 @@ void BPlusTree<DataType>::delete_index(BPlusTree::DataNode *cur_node, Index inde
     }
 }
 
-template<typename DataType>
+template<typename DataType, typename IndexType>
 void
-BPlusTree<DataType>::redistribute_node(BPlusTree::DataNode *left_node, BPlusTree::DataNode *right_node,
-                                       int pos_of_left_node, int which_one_is_cur_node){
+BPlusTree<DataType, IndexType>::redistribute_node(BPlusTree::DataNode *left_node, BPlusTree::DataNode *right_node,
+                                                  int pos_of_left_node, int which_one_is_cur_node){
 
-    Index pre_right_first_index = right_node->indexes[0];
+    IndexType pre_right_first_index = right_node->indexes[0];
     if(which_one_is_cur_node == 0){
         // 左节点是当前节点, 即需要从右节点移动第一个元素到左节点
 
@@ -476,9 +476,9 @@ BPlusTree<DataType>::redistribute_node(BPlusTree::DataNode *left_node, BPlusTree
     }
 }
 
-template<typename DataType>
-void BPlusTree<DataType>::merge_node(BPlusTree::DataNode *left_node, BPlusTree::DataNode *right_node,
-                                     int pos_of_right_node){
+template<typename DataType, typename IndexType>
+void BPlusTree<DataType, IndexType>::merge_node(BPlusTree::DataNode *left_node, BPlusTree::DataNode *right_node,
+                                                int pos_of_right_node){
     if(!left_node->is_leaf()){
         left_node->indexes.push_back(left_node->parent->indexes[pos_of_right_node - 1]);
     }
@@ -502,8 +502,8 @@ void BPlusTree<DataType>::merge_node(BPlusTree::DataNode *left_node, BPlusTree::
     left_node->parent->children.erase(left_node->parent->children.begin() + pos_of_right_node);
 }
 
-template<typename DataType>
-BPlusTree<DataType>::BPlusTree(int max_leaf_num){
+template<typename DataType, typename IndexType>
+BPlusTree<DataType, IndexType>::BPlusTree(int max_leaf_num){
     // 该B+树只能支持大于等于3的最大叶子节点
     if(max_leaf_num <= 2)
         throw "max leaf num must >= 3: " + std::to_string(max_leaf_num);
@@ -514,9 +514,9 @@ BPlusTree<DataType>::BPlusTree(int max_leaf_num){
     _rightmost_leaf = _root;
 }
 
-template<typename DataType>
-std::list<Index> BPlusTree<DataType>::get_forward_index_list(){
-    std::list<Index> l;
+template<typename DataType, typename IndexType>
+std::list<IndexType> BPlusTree<DataType, IndexType>::get_forward_index_list(){
+    std::list<IndexType> l;
     for(auto tmp = _leftmost_leaf; tmp != nullptr; tmp = tmp->next_leaf){
         for(int i = 0; i < tmp->indexes.size(); i++){
             l.push_back(tmp->indexes[i]);
@@ -525,9 +525,9 @@ std::list<Index> BPlusTree<DataType>::get_forward_index_list(){
     return l;
 }
 
-template<typename DataType>
-std::list<Index> BPlusTree<DataType>::get_reverse_index_list(){
-    std::list<Index> l;
+template<typename DataType, typename IndexType>
+std::list<IndexType> BPlusTree<DataType, IndexType>::get_reverse_index_list(){
+    std::list<IndexType> l;
     for(auto tmp = _rightmost_leaf; tmp != nullptr; tmp = tmp->pre_leaf){
         for(int i = tmp->indexes.size() - 1; i >= 0; i--){
             l.push_back(tmp->indexes[i]);
