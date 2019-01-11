@@ -7,7 +7,7 @@
 #include "index_tree/b_plus_tree.h"
 
 TEST(BPlusTree, int_as_index_and_int_as_data) {
-    std::vector<int> input_keys({5,9,1,3,4,59,65,45,89,29,68,108,165,298,219,596,37,47,53,61,43,51,57,49});
+    extern std::vector<int> input_keys;
     BPlusTree<int,int> tree;
     std::list<int> order_input;
     // test insert
