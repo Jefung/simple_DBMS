@@ -1,5 +1,5 @@
 # 设置入口文件,将除入口文件外的其他文件打包为库文件,供入口文件和单元测试使用
-set(MAIN_FILE main_copy.cpp)
+set(MAIN_FILE main.cpp)
 
 # 将当前目录下所有.cpp/.h文件包含进来. 注意,file()必须在每次增加/删除文件时reload project
 file(GLOB_RECURSE source_files "*.cpp" "*.h" "*.c")

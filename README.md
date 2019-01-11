@@ -67,6 +67,7 @@ STUDENT
 然后重写纯虚函数.
 
 ps: 这里本来是想把比较函数定义为纯虚函数,如
+
 `virtual friend bool operator>=(const ColTypeInterface &i1, const ColTypeInterface &i2) = 0;`,
 然后发现`C++`不支持, google了下, 发现只要简单的重写比较函数, 然后调用其自定义的纯虚函数即可.
 ```cpp
@@ -107,8 +108,11 @@ public:
 
 #### 2.3 B+树的实现
 代码参考: [b_plus_tree.h](src/index_tree/b_plus_tree.h)
+
 思路参考: [B树和B+树的插入、删除图文详解 - nullzx - 博客园](https://www.cnblogs.com/nullzx/p/8729425.html)
+
 用法参考: [test_b_plus_tree.cpp](tests/test_b_plus_tree.cpp) (待完善)
+
 B+树的实现是真的很恶心. 我写了好几天才写出来, 而且还不是那么完善. 有兴趣的可以研究下代码
 
 ### 3. 如何控制不同表?
